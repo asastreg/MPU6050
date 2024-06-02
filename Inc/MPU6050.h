@@ -1,4 +1,8 @@
 
+#ifndef __MPU6050_H
+#define __MPU6050_H
+
+
 #include <stdint.h>
 
 #include "stm32f1xx_hal.h"
@@ -90,73 +94,137 @@
 
 
 typedef enum
-{
-	AFS_0 = 0x00U,
-	AFS_1 = 0x01U,
-	AFS_2 = 0x02U,
-	AFS_3 = 0x03U
+{								 //	Full Scale Range
+	AFS_0 = 0x00U, // 		± 2g
+	AFS_1 = 0x01U, // 		± 4g
+	AFS_2 = 0x02U, // 		± 8g
+	AFS_3 = 0x03U	 // 	 ± 16g
 } MPU6050_AFS_TypeDef;
 
 
 typedef enum
-{
-	GFS_0 = 0x00U,
-	GFS_1 = 0x01U,
-	GFS_2 = 0x02U,
-	GFS_3 = 0x03U
+{								 //	Full Scale Range
+	GFS_0 = 0x00U, //		 ± 250º/s
+	GFS_1 = 0x01U, // 	 ± 500º/s
+	GFS_2 = 0x02U, // 	± 1000º/s
+	GFS_3 = 0x03U  // 	± 2000º/s
 } MPU6050_GFS_TypeDef;
+
+
+typedef enum			//	 Accelerometer (Fs = 1kHz)  ||						Gyroscope
+{									//	Bandwidth (Hz) | Delay (ms) || Bandwidth (Hz) | Delay (ms) | Fs (kHz)
+	DLPF_0 = 0x00U, //	    	260 		 | 			0			|| 			256 			| 	 0.98		 | 		8
+	DLPF_1 = 0x01U, //	    	184 		 | 		2.0 		|| 			188 			| 		1.9		 | 		1
+	DLPF_2 = 0x02U, //				 94 		 | 		3.0 		|| 			 98				| 		2.8		 | 		1
+	DLPF_3 = 0x03U, //				 44 		 | 		4.9 		|| 			 42				| 		4.8		 | 		1
+	DLPF_4 = 0x04U, //				 21 		 | 		8.5 		|| 			 20				| 		8.3		 | 		1
+	DLPF_5 = 0x05U, //			   10 		 | 	 13.8 		|| 			 10				| 	 13.4		 | 		1
+	DLPF_6 = 0x06U  //					5 		 | 	 19.0 		|| 				5   		| 	 18.6		 | 		1
+} MPU6050_DLPF_TypeDef;
 
 
 typedef struct
 {
-	uint16_t adress;
-	uint32_t timeout;
-	MPU6050_AFS_TypeDef afs;
-	MPU6050_GFS_TypeDef gfs;
 	I2C_HandleTypeDef *hi2c;
 
+	uint16_t adress;
+	MPU6050_AFS_TypeDef afs;
+	MPU6050_GFS_TypeDef gfs;
+	MPU6050_DLPF_TypeDef dlpf;
+	float sample_rate;	// Hz
+
+	float accel_bias[3];
+	float gyro_bias[3];
 } MPU6050_HandleTypeDef;
 
 
 typedef enum
 {
 	MPU_OK 		= 0x00U,
-	MPU_ERROR 	= 0x01U
+	MPU_ERROR = 0x01U
 } MPU6050_StatusTypeDef;
 
-
+/**
+ * @brief
+ *
+ */
 typedef struct
-{
-	int16_t x_accel_raw;
-	int16_t y_accel_raw;
-	int16_t z_accel_raw;
-	float x_accel;
-	float y_accel;
-	float z_accel;
-
-	int16_t x_gyro_raw;
-	int16_t y_gyro_raw;
-	int16_t z_gyro_raw;
-	float x_gyro;
-	float y_gyro;
-	float z_gyro;
-
-	int16_t temp_raw;
-	float temp;
-
+{									// 	Units
+	float accel[3];	// 		g
+	float temp;			//	 °C
+	float gyro[3];	//	deg/s
+	uint8_t buffer[14];
 } MPU6050_t;
 
 
+/**
+ * @brief Initialize the MPU6050 sensor with interrupt when data is ready to read.
+ *
+ * @param [in] hmpu: Pointer to the object with the configuration parameters.
+ * @return MPU6050_StatusTypeDef: Status code
+ */
+MPU6050_StatusTypeDef MPU6050_Init_Int(MPU6050_HandleTypeDef *hmpu);
+
+/**
+ * @brief
+ *
+ * @param hmpu
+ * @return MPU6050_StatusTypeDef
+ */
 MPU6050_StatusTypeDef MPU6050_Init(MPU6050_HandleTypeDef *hmpu);
 
-
+/**
+ * @brief
+ *
+ * @param hmpu
+ * @param mpu
+ * @return MPU6050_StatusTypeDef
+ */
 MPU6050_StatusTypeDef MPU6050_Read_Temp(MPU6050_HandleTypeDef *hmpu, MPU6050_t *mpu);
 
-
+/**
+ * @brief
+ *
+ * @param hmpu
+ * @param mpu
+ * @return MPU6050_StatusTypeDef
+ */
 MPU6050_StatusTypeDef MPU6050_Read_Accel(MPU6050_HandleTypeDef *hmpu, MPU6050_t *mpu);
 
-
+/**
+ * @brief
+ *
+ * @param hmpu
+ * @param mpu
+ * @return MPU6050_StatusTypeDef
+ */
 MPU6050_StatusTypeDef MPU6050_Read_Gyro(MPU6050_HandleTypeDef *hmpu, MPU6050_t *mpu);
 
-
+/**
+ * @brief
+ *
+ * @param hmpu
+ * @param mpu
+ * @return MPU6050_StatusTypeDef
+ */
 MPU6050_StatusTypeDef MPU6050_Read_All(MPU6050_HandleTypeDef *hmpu, MPU6050_t *mpu);
+
+/**
+ * @brief
+ *
+ * @param hmpu
+ * @param mpu
+ * @return MPU6050_StatusTypeDef
+ */
+MPU6050_StatusTypeDef MPU6050_Read_DMA(MPU6050_HandleTypeDef *hmpu, MPU6050_t *mpu);
+
+/**
+ * @brief
+ *
+ * @param hmpu
+ * @param mpu
+ * @return MPU6050_StatusTypeDef
+ */
+MPU6050_StatusTypeDef MPU6050_Process_DMA(MPU6050_HandleTypeDef *hmpu, MPU6050_t *mpu);
+
+#endif
